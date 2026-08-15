@@ -1,8 +1,0 @@
-Source distribution note
-
-The source code is included with this release.
-
-No open-source license has been declared in this package yet.
-Before publishing the source on Nexus Mods / GitHub, choose and include the
-license terms you want other people to follow when copying, modifying, or
-redistributing this code.
