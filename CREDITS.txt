@@ -1,0 +1,16 @@
+Nocturne Detailed Skill Info - Credits
+
+Project / SMT3HD implementation
+  Gray Ghost
+
+Development and analysis assistance
+  ChatGPT
+
+Inspiration
+  Tyrant-Thanatos - Detailed Skill Descriptions
+  for Shin Megami Tensei V: Vengeance
+
+Nocturne Detailed Skill Info is independently implemented for SMT3HD.
+It does not convert or redistribute the original SMT5V mod's files or assets.
+
+No affiliation with or endorsement by Tyrant-Thanatos is implied.

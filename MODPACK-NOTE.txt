@@ -1,0 +1,21 @@
+Nocturne Detailed Skill Info - Modpack Note
+
+Modpack / collection inclusion is welcome.
+
+License:
+  MIT License
+
+You may include the DLL and/or source in modpacks, installers, compatibility
+collections, or integrations as permitted by the MIT License.
+
+Required by MIT:
+  Keep the copyright notice and MIT license text with copies or substantial
+  portions of the software.
+
+Requested but not required by MIT:
+  Credit "Gray Ghost" and link users to the original project page when
+  practical, so they can find updates and source code.
+
+This permission covers this project's own code/software only. It does not
+license ATLUS/SEGA game assets, game data, trademarks, or other third-party
+materials.

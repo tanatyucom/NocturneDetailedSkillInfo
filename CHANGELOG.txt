@@ -1,0 +1,20 @@
+Nocturne Detailed Skill Info - Changelog
+
+1.0.0
+-----
+- First stable release.
+- Japanese and English supported automatically in one DLL.
+- Finalized verified Power / 威力 display.
+- Finalized practical Accuracy / 命中 calculation.
+- Finalized Crit / CT display.
+- Finalized recovery, ailment, buff/debuff, and verified multi-hit details.
+- Finalized special physical-skill corrections.
+- Added conservative reserve, placeholder, enemy-only, and unresolved-data filters.
+- English localized full-audit validated all 512 rows.
+- Japanese localized full-audit validated all 512 rows.
+- Japanese and English each produce 150 validated Detailed Help changes.
+- Automatic audit CSV generation disabled in the public release.
+- Internal localized audit code retained for future regression testing.
+- Internal assembly/project/namespace standardized as NocturneDetailedSkillInfo.
+- MIT License added.
+- Modpack / collection inclusion explicitly welcomed.
