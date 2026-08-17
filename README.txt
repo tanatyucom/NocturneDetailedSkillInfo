@@ -73,7 +73,7 @@ No separate Japanese or English DLL is required.
 Requirements
 ------------
 - Shin Megami Tensei III Nocturne HD Remaster (Steam)
-- MelonLoader
+- MelonLoader 0.6.1 series
 
 Installation
 ------------
@@ -162,7 +162,7 @@ Project / SMT3HD implementation:
 Development and analysis assistance:
   ChatGPT
 
-Inspired by Tyrant-Thanatos' "Detailed Skill Descriptions" mod for
+Inspired by onepunchmeme' "Detailed Skill Descriptions" mod for
 Shin Megami Tensei V: Vengeance.
 
 This SMT3HD mod is an independent implementation. It does not convert or
