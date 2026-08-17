@@ -7,7 +7,7 @@ using HarmonyLib;
 using Il2Cpp;
 using MelonLoader;
 
-[assembly: MelonInfo(typeof(NocturneDetailedSkillInfo.NocturneDetailedSkillInfoMod), "Nocturne Detailed Skill Info", "1.0.0", "Gray Ghost")]
+[assembly: MelonInfo(typeof(NocturneDetailedSkillInfo.NocturneDetailedSkillInfoMod), "Nocturne Detailed Skill Info", "1.0.1", "Gray Ghost")]
 [assembly: MelonGame(null, "smt3hd")]
 
 namespace NocturneDetailedSkillInfo
@@ -27,7 +27,7 @@ namespace NocturneDetailedSkillInfo
         public override void OnInitializeMelon()
         {
             Log = LoggerInstance;
-            LoggerInstance.Msg("Nocturne Detailed Skill Info 1.0.0 initialized.");
+            LoggerInstance.Msg("Nocturne Detailed Skill Info 1.0.1 initialized.");
             LoggerInstance.Msg("Verified Detailed Skill Info enabled (Japanese / English).");
 
             try
@@ -318,6 +318,7 @@ namespace NocturneDetailedSkillInfo
     }
 
     [HarmonyPatch(typeof(datSkillHelp_msg), nameof(datSkillHelp_msg.Get), new Type[] { typeof(int) })]
+    [HarmonyPriority(Priority.Last)]
     internal static class SkillHelpGetterPatch
     {
         [HarmonyPostfix]
@@ -330,7 +331,9 @@ namespace NocturneDetailedSkillInfo
 
             try
             {
-                string original = NocturneDetailedSkillInfoMod.Normalize(__result ?? "");
+                // Treat the incoming result as authoritative. It may contain
+                // official formatting or text produced by another postfix.
+                string original = __result ?? "";
                 string detailed = DetailedHelpBuilder.Build(id, original);
                 __result = detailed;
 
@@ -379,6 +382,9 @@ namespace NocturneDetailedSkillInfo
 
     internal static class DetailedHelpBuilder
     {
+        private static readonly Dictionary<int, HashSet<string>> GeneratedSuffixes =
+            new Dictionary<int, HashSet<string>>();
+
         internal static DetailLanguage DetectLanguage(string text)
         {
             if (!String.IsNullOrEmpty(text))
@@ -396,13 +402,13 @@ namespace NocturneDetailedSkillInfo
             return DetailLanguage.English;
         }
 
-        private static string JoinDetails(string baseText, List<string> details, DetailLanguage lang)
+        private static string BuildSuffix(List<string> details, DetailLanguage lang)
         {
             if (details.Count == 0)
-                return baseText;
+                return "";
 
             string sep = lang == DetailLanguage.Japanese ? "　" : "  ";
-            return baseText + sep + string.Join(sep, details);
+            return sep + string.Join(sep, details);
         }
 
         private static string Label(DetailLanguage lang, string ja, string en)
@@ -410,31 +416,43 @@ namespace NocturneDetailedSkillInfo
 
         public static string Build(int id, string original)
         {
+            string incoming = original ?? "";
+            HashSet<string>? knownSuffixes = null;
+            GeneratedSuffixes.TryGetValue(id, out knownSuffixes);
+
+            // Only remove an exact terminal suffix that this mod previously
+            // generated for this skill during the current process. Generic
+            // words such as "Power:" and "威力:" are never truncation keys.
+            string originalBase =
+                GeneratedSuffixPolicy.RemoveKnownSuffix(incoming, knownSuffixes);
+
             var skills = datSkill.tbl;
             var normal = datNormalSkill.tbl;
 
             if (skills == null || normal == null)
-                return original;
+                return originalBase;
 
             if (id < 0 || id >= skills.Length)
-                return original;
+                return originalBase;
 
             var map = skills[id];
             if (map == null || map.index < 0 || map.index >= normal.Length)
-                return original;
+                return originalBase;
 
             var n = normal[map.index];
             if (n == null)
-                return original;
+                return originalBase;
 
-            string baseText = StripGeneratedSuffix(original);
-            DetailLanguage lang = DetectLanguage(baseText);
+            // Normalization is analysis-only. It must never become the
+            // canonical output string.
+            string analyzedBase = NocturneDetailedSkillInfoMod.Normalize(originalBase);
+            DetailLanguage lang = DetectLanguage(analyzedBase);
 
-            if (!IsEligibleForDetailedHelp(id, baseText))
-                return baseText;
+            if (!IsEligibleForDetailedHelp(id, analyzedBase))
+                return originalBase;
             var details = new List<string>();
 
-            if (IsVerifiedDamageDetail(id, baseText, n))
+            if (IsVerifiedDamageDetail(id, analyzedBase, n))
             {
                 // Two verified fixed-multi-hit skills store total power 32,
                 // while external SMT3 tables document 8 power per hit.
@@ -460,12 +478,23 @@ namespace NocturneDetailedSkillInfo
             }
 
             string hitCount = "";
-            if (TryGetHitCountDisplay(id, baseText, n, lang, out hitCount))
+            if (TryGetHitCountDisplay(id, analyzedBase, n, lang, out hitCount))
                 details.Add($"{Label(lang, "回数", "Hits")}:{hitCount}");
 
             AddBasicHojoDetails(details, n.hojotype, n.hojopoint, lang);
 
-            return JoinDetails(baseText, details, lang);
+            string suffix = BuildSuffix(details, lang);
+            if (String.IsNullOrEmpty(suffix))
+                return originalBase;
+
+            if (knownSuffixes == null)
+            {
+                knownSuffixes = new HashSet<string>(StringComparer.Ordinal);
+                GeneratedSuffixes[id] = knownSuffixes;
+            }
+
+            knownSuffixes.Add(suffix);
+            return GeneratedSuffixPolicy.Append(originalBase, suffix);
         }
 
         private static bool IsVerifiedDamageDetail(
@@ -667,68 +696,6 @@ namespace NocturneDetailedSkillInfo
                 return false;
 
             return true;
-        }
-
-        private static string StripGeneratedSuffix(string s)
-        {
-            string t = NocturneDetailedSkillInfoMod.Normalize(s);
-
-            string[] markers =
-            {
-                "　威力:",
-                "　回復基礎値:",
-                "　感電付与値:",
-                "　凍結付与値:",
-                "　睡眠付与値:",
-                "　混乱付与値:",
-                "　緊縛付与値:",
-                "　魔封付与値:",
-                "　毒付与値:",
-                "　魅了付与値:",
-                "　麻痺付与値:",
-                "　石化付与値:",
-                "　即死付与値:",
-                "　回数:",
-                "　物理攻撃:",
-                "　魔法威力:",
-                "　命中:",
-                "　防御:",
-                "　回避:",
-                "  Power:",
-                "  Heal Base:",
-                "  Shock Rate:",
-                "  Freeze Rate:",
-                "  Sleep Rate:",
-                "  Panic Rate:",
-                "  Bind Rate:",
-                "  Mute Rate:",
-                "  Poison Rate:",
-                "  Charm Rate:",
-                "  Paralyze Rate:",
-                "  Petrify Rate:",
-                "  Instant Death Rate:",
-                "  Hits:",
-                "  Phys Atk:",
-                "  Mag Power:",
-                "  Accuracy:",
-                "  Defense:",
-                "  Evasion:",
-                "  Crit:"
-            };
-
-            int cut = -1;
-
-            foreach (string marker in markers)
-            {
-                int p = t.IndexOf(marker, StringComparison.Ordinal);
-                if (p >= 0 && (cut < 0 || p < cut))
-                    cut = p;
-            }
-
-            if (cut >= 0)
-                return t.Substring(0, cut).TrimEnd();
-
-            return t;
         }
 
         public static string DecodeAilment(uint bits)

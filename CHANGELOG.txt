@@ -1,5 +1,15 @@
 Nocturne Detailed Skill Info - Changelog
 
+1.0.1
+-----
+- Preserved the exact incoming help string when no detail is appended.
+- Kept normalization analysis-only so control tags, line breaks, and whitespace
+  are not unnecessarily rewritten.
+- Replaced generic Power:/威力: truncation with exact known-suffix deduplication.
+- Added late Harmony postfix priority and documented compatibility behavior.
+- Added reproducible validation documentation and suffix-policy regression tests.
+- Tested build target: SMT3HD 1.0.4, MelonLoader 0.6.1 Open-Beta, .NET 6.
+
 1.0.0
 -----
 - First stable release.
